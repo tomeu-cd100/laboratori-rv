@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>El meu disseny damunt la taula</title>
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    #panell {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+      background: rgba(0, 0, 0, .75); color: #fff; padding: 10px 14px; font-size: 16px;
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    }
+    #panell label { cursor: pointer; }
+    #estat { color: #ffe066; }
+  </style>
+</head>
+<body>
+  <!--
+    PROVA DE REALITAT MIXTA (Quest 3S, passthrough en color)
+    1. Al Chromebook: Tinkercad → Exporta → .GLB (o .glTF). Puja el fitxer al costat
+       d'aquesta pàgina, o obre la pàgina amb ?model=nom.glb
+    2. A les Quest: obre aquesta pàgina al navegador → botó «AR» (abaix a la dreta).
+    3. Apunta la taula amb el comandament: apareix un anell; prem el gallet per deixar-hi
+       el model.
+    Tinkercad exporta en mil·límetres → escala per defecte 0.001 (1 mm = 1 mm real).
+  -->
+  <div id="panell">
+    <label>📂 Obre un model (.glb) <input type="file" id="fitxer" accept=".glb,.gltf"></label>
+    <span id="estat">Sense model: es mostra un cub de 5 cm.</span>
+  </div>
+
+  <a-scene
+    webxr="optionalFeatures: hit-test, local-floor"
+    ar-hit-test="target: #objecte; type: footprint"
+    xr-mode-ui="XRMode: ar">
+
+    <a-entity light="type: hemisphere; intensity: 1.2"></a-entity>
+    <a-entity light="type: directional; intensity: 0.8" position="1 2 1"></a-entity>
+
+    <!-- Objecte a col·locar: cub de 5 cm per defecte; es substitueix pel model -->
+    <a-entity id="objecte" position="0 1 -0.5">
+      <a-box id="cub" width="0.05" height="0.05" depth="0.05" color="#2a9d8f"></a-box>
+    </a-entity>
+
+    <a-entity camera look-controls position="0 1.6 0"></a-entity>
+  </a-scene>
+
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const escala = parseFloat(params.get("escala") || "0.001");
+  const objecte = document.getElementById("objecte");
+  const estat = document.getElementById("estat");
+
+  function posaModel(url, nom) {
+    const cub = document.getElementById("cub");
+    if (cub) cub.remove();
+    objecte.querySelectorAll("[gltf-model]").forEach(e => e.remove());
+    const m = document.createElement("a-entity");
+    m.setAttribute("gltf-model", url);
+    m.setAttribute("scale", `${escala} ${escala} ${escala}`);
+    m.addEventListener("model-loaded", () => {
+      // Mida real del model (en metres) per detectar escales errònies
+      const caixa = new THREE.Box3().setFromObject(m.object3D);
+      const mida = caixa.getSize(new THREE.Vector3()).multiplyScalar(1000);
+      estat.textContent = `${nom}: ${mida.x.toFixed(0)} × ${mida.y.toFixed(0)} × ${mida.z.toFixed(0)} mm`;
+    });
+    m.addEventListener("model-error", () => { estat.textContent = `No s'ha pogut carregar ${nom}`; });
+    objecte.appendChild(m);
+  }
+
+  if (params.get("model")) posaModel(params.get("model"), params.get("model"));
+
+  document.getElementById("fitxer").addEventListener("change", ev => {
+    const f = ev.target.files[0];
+    if (f) posaModel(URL.createObjectURL(f), f.name);
+  });
+})();
+</script>
+</body>
+</html>

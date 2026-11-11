@@ -1,0 +1,4 @@
+formacio/
+escenes_reals/
+*.tmp
+__pycache__/
