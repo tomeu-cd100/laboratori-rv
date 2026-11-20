@@ -80,6 +80,16 @@ immersió» amb el mateix fitxer.
    - L'app de Delightex a la Quest 3S obre un projecte del pla Basic.
    - Un fons dibuixat i escanejat es veu sense costures al visor.
 
+## Ampliació (2026-11-20): altres eines gratuïtes
+
+| Eina | Què és | Compte | Ulleres | Límit principal | Veredicte |
+|---|---|---|---|---|---|
+| [**Flock XR**](https://flockxr.com/) ([GitHub](https://github.com/flipcomputing/flock), MIT) | Mons 3D i programació **amb blocs** (Blockly + Babylon.js), per a 7-14+ anys. Accés anticipat, actiu (nov. 2026) | **No** | Sí, navegador de la Quest (bloc `set XR mode to VR headset`) | Interfície en castellà, **no en català**. Només models de la biblioteca: per afegir-hi els propis cal una còpia del projecte (*fork*). Desa automàticament al navegador i exporta un fitxer `.flock` | ⭐ El substitut més directe de Delightex |
+| [A-Painter](https://aframe.io/a-painter/) ([GitHub](https://github.com/aframevr/a-painter), MIT) | Pintar en 3D des del navegador de les ulleres | No | Sí (WebXR) | Sense actualitzacions des del 2024 | A provar a la Quest 3S |
+| [Pannellum Tour Editor](https://github.com/rodrigopolo/pannellum-tour-editor) (MIT) | Editor visual de tours 360 | No | Visor web | Projecte petit, d'1 persona | Alternativa al visor propi per a la SA7 |
+| ShapesXR | Disseny 3D col·laboratiu a les ulleres | Sí | Sí | El pla gratuït té 1 espai editable; per a escoles cal pressupost | ❌ |
+| BabloXR (article UC3M, 2025) | Blockly + WebXR per a docents | — | — | No se n'ha trobat ni codi ni versió en línia | ❌ |
+
 ## Fonts
 
 - [Delightex — plans i preus](https://www.delightex.com/edu/pricing) i [FAQ](https://www.delightex.com/edu/tech-check-faq)
