@@ -1,0 +1,81 @@
+{
+ "format": "mon-v1",
+ "titol": "Món d'exemple",
+ "cel": {
+  "tipus": "color",
+  "color": "#9ad0ff",
+  "imatge": "",
+  "gir": 0
+ },
+ "terra": {
+  "visible": true,
+  "color": "#7cb46b"
+ },
+ "objectes": [
+  {
+   "id": "r1",
+   "tipus": "text",
+   "nom": "Benvinguda",
+   "color": "#e76f51",
+   "text": "Benvinguts al nostre món!\nClica els objectes.",
+   "missatge": "",
+   "x": 0,
+   "y": 0.8,
+   "z": -4,
+   "girY": 0,
+   "mida": 2.5
+  },
+  {
+   "id": "c1",
+   "tipus": "cub",
+   "nom": "Casa",
+   "color": "#e76f51",
+   "text": "",
+   "missatge": "Això és una casa feta\namb un cub i un con.",
+   "x": -2.5,
+   "y": 0,
+   "z": -3,
+   "girY": 20,
+   "mida": 1.4
+  },
+  {
+   "id": "c2",
+   "tipus": "con",
+   "nom": "Teulada",
+   "color": "#8d3b2b",
+   "text": "",
+   "missatge": "",
+   "x": -2.5,
+   "y": 1.4,
+   "z": -3,
+   "girY": 20,
+   "mida": 1.6
+  },
+  {
+   "id": "a1",
+   "tipus": "cilindre",
+   "nom": "Tronc",
+   "color": "#7a4e2d",
+   "text": "",
+   "missatge": "",
+   "x": 2.5,
+   "y": 0,
+   "z": -3,
+   "girY": 0,
+   "mida": 0.4
+  },
+  {
+   "id": "a2",
+   "tipus": "esfera",
+   "nom": "Copa",
+   "color": "#2a9d55",
+   "text": "",
+   "missatge": "Un arbre: cilindre + esfera.",
+   "x": 2.5,
+   "y": 0.4,
+   "z": -3,
+   "girY": 0,
+   "mida": 1.5
+  }
+ ]
+}

@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Constructor de mons</title>
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <style>
+    :root { --fons: rgba(16, 22, 34, .92); --linia: rgba(255, 255, 255, .15); --accent: #ffd60a; }
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    [hidden] { display: none !important; }
+    #panell {
+      position: fixed; z-index: 10; top: 0; left: 0; bottom: 0; width: 310px; overflow-y: auto; overflow-x: hidden;
+      background: var(--fons); color: #fff; padding: 10px 12px; box-sizing: border-box; font-size: 14px;
+    }
+    #panell h1 { font-size: 18px; margin: 4px 0 10px; }
+    #panell fieldset { border: 1px solid var(--linia); border-radius: 8px; margin: 0 0 10px; padding: 8px; }
+    #panell legend { padding: 0 4px; font-weight: 600; }
+    #panell label { display: block; margin: 4px 0; }
+    #panell input[type=text], #panell textarea { width: 100%; box-sizing: border-box; font: inherit; }
+    #panell button, .boto {
+      display: inline-block; margin: 3px 2px; padding: 5px 9px; border-radius: 6px; cursor: pointer;
+      background: #2b3a55; color: #fff; border: 1px solid var(--linia); font: inherit;
+    }
+    #panell button:hover, .boto:hover { background: #3b5078; }
+    .fila { display: grid; grid-template-columns: 62px 1fr 56px; gap: 6px; align-items: center; margin: 3px 0; }
+    .fila input[type=number] { width: 100%; box-sizing: border-box; }
+    #llista { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow-y: auto; }
+    #llista li { padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+    #llista li.triat { background: #5a4a00; outline: 1px solid var(--accent); }
+    .pista { color: #b8c4d8; font-size: 12px; margin: 4px 0; }
+    #estat { color: var(--accent); min-height: 1.2em; }
+    #esborra { background: #6b1f1f !important; }
+    #barra-visor {
+      position: fixed; z-index: 10; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, .7); color: #fff;
+      padding: 8px 14px; font-size: 15px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    }
+    #barra-visor button { font: inherit; padding: 3px 10px; cursor: pointer; }
+    #qr-capa {
+      position: fixed; z-index: 20; inset: 0; background: rgba(0, 0, 0, .8); display: flex;
+      align-items: center; justify-content: center; flex-direction: column; color: #fff; gap: 10px;
+    }
+    #qr { background: #fff; padding: 12px; border-radius: 8px; }
+    @media (max-width: 700px) {
+      #panell { top: auto; width: auto; right: 0; height: 45vh; }
+    }
+  </style>
+</head>
+<body>
+  <!--
+    CONSTRUCTOR DE MONS (sense comptes)
+    - Editor (Chromebook): aquesta pàgina tal qual. L'esborrany es desa sol al navegador,
+      però cal «Desa el món» (.json) al final de cada sessió i lliurar-lo.
+    - Visor (Quest): ?mon=mons/fitxer.json  (el docent hi posa el .json lliurat i publica).
+    - Previsualització del propi esborrany: ?veure
+  -->
+  <aside id="panell" hidden>
+    <h1>🌍 Constructor de mons</h1>
+    <label>Nom del món <input type="text" id="titol" maxlength="60"></label>
+
+    <fieldset>
+      <legend>Cel</legend>
+      <label><input type="radio" name="cel-tipus" value="color"> Color
+        <input type="color" id="cel-color"></label>
+      <label><input type="radio" name="cel-tipus" value="imatge"> Imatge 360°</label>
+      <label class="boto">🖼️ Tria la imatge 360 <input type="file" id="cel-fitxer" accept="image/*" hidden></label>
+      <div class="fila"><span>Gira</span><input type="range" id="cel-gir" min="-180" max="180" step="5"><output id="cel-gir-val"></output></div>
+      <p class="pista">Foto de la càmera 360 o dibuix en una graella 2:1.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Terra</legend>
+      <label><input type="checkbox" id="terra-visible"> Mostra el terra
+        <input type="color" id="terra-color"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Afegeix</legend>
+      <label class="boto">📦 Model 3D (.glb) <input type="file" id="model-fitxer" accept=".glb" hidden></label>
+      <button data-afegeix="text">🪧 Rètol</button><br>
+      <button data-afegeix="cub">Cub</button>
+      <button data-afegeix="esfera">Esfera</button>
+      <button data-afegeix="cilindre">Cilindre</button>
+      <button data-afegeix="con">Con</button>
+      <p class="pista">A Tinkercad: Exporta → .GLB</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Objectes</legend>
+      <ul id="llista"></ul>
+    </fieldset>
+
+    <fieldset id="props" hidden>
+      <legend>Objecte seleccionat</legend>
+      <label>Nom <input type="text" id="p-nom" maxlength="40"></label>
+      <label id="fila-color">Color <input type="color" id="p-color"></label>
+      <label id="fila-text">Text del rètol <textarea id="p-text" rows="2" maxlength="200"></textarea></label>
+      <label>Missatge quan el cliquen <textarea id="p-missatge" rows="2" maxlength="300"></textarea></label>
+      <div id="controls-transform"></div>
+      <p class="pista">Fes clic a terra per portar-hi l'objecte.</p>
+      <button id="duplica">Duplica</button>
+      <button id="esborra">Esborra</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>Fitxer</legend>
+      <button id="desa">💾 Desa el món (.json)</button>
+      <label class="boto">📂 Obre un món <input type="file" id="obre" accept=".json,application/json" hidden></label>
+      <button id="nou">Nou</button>
+      <a class="boto" href="?veure" target="_blank">👓 Mira'l com a visitant</a>
+    </fieldset>
+    <p id="estat"></p>
+  </aside>
+
+  <div id="barra-visor" hidden>
+    <b id="titol-visor"></b>
+    <span>Botó VR per entrar · gallet: clica objectes, o el terra per moure't</span>
+    <button id="boto-qr" hidden>QR</button>
+  </div>
+  <div id="qr-capa" hidden>
+    <div id="qr"></div>
+    <span>Escaneja-ho amb el mòbil o obre l'adreça a les ulleres</span>
+    <button id="tanca-qr">Tanca</button>
+  </div>
+
+  <a-scene renderer="colorManagement: true" xr-mode-ui="enabled: true" webxr="optionalFeatures: local-floor">
+    <a-entity light="type: hemisphere; color: #ffffff; groundColor: #667788; intensity: 1.1"></a-entity>
+    <a-entity light="type: directional; intensity: 0.9" position="2 4 1"></a-entity>
+    <a-sky id="cel" radius="100" color="#9ad0ff"></a-sky>
+    <a-plane id="terra" class="clicable" rotation="-90 0 0" width="60" height="60" color="#7cb46b"></a-plane>
+    <a-ring id="inici" rotation="-90 0 0" radius-inner="0.3" radius-outer="0.4" color="#3a86ff"
+            material="shader: flat" position="0 0.01 0" visible="false"></a-ring>
+    <a-ring id="seleccio" rotation="-90 0 0" radius-inner="0.55" radius-outer="0.62" color="#ffd60a"
+            material="shader: flat" position="0 0.02 0" visible="false"></a-ring>
+    <a-entity id="objectes"></a-entity>
+    <a-entity id="missatges"></a-entity>
+
+    <a-entity id="rig" position="0 0 6">
+      <a-entity id="camera" camera look-controls wasd-controls="acceleration: 25" position="0 1.6 0"
+                cursor="rayOrigin: mouse" raycaster="objects: .clicable"></a-entity>
+      <a-entity laser-controls="hand: right" raycaster="objects: .clicable; far: 100"></a-entity>
+      <a-entity laser-controls="hand: left" raycaster="objects: .clicable; far: 100"></a-entity>
+    </a-entity>
+  </a-scene>
+
+<script>
+(function () {
+  "use strict";
+  const params = new URLSearchParams(location.search);
+  const MODE_VISOR = params.has("mon") || params.has("veure");
+  const CLAU_ESBORRANY = "esborrany";
+  const MAX_IMATGE = 4096;          // amplada màxima del cel (px): prou per a les Quest 3S
+  const MAX_MODEL_MB = 15;
+
+  const $ = id => document.getElementById(id);
+  const escena = document.querySelector("a-scene");
+  const contenidor = $("objectes");
+  const estat = $("estat");
+
+  const ICONES = { model: "📦", text: "🪧", cub: "🟥", esfera: "⚪", cilindre: "🛢️", con: "🔺" };
+  const NOMS = { model: "Model", text: "Rètol", cub: "Cub", esfera: "Esfera", cilindre: "Cilindre", con: "Con" };
+
+  const monBuit = () => ({
+    format: "mon-v1",
+    titol: "El nostre món",
+    cel: { tipus: "color", color: "#9ad0ff", imatge: "", gir: 0 },
+    terra: { visible: true, color: "#7cb46b" },
+    objectes: []
+  });
+
+  let mon = monBuit();
+  let selId = null;
+  const midaBase = new Map();       // id → mida més gran del model original (unitats del .glb)
+  const urlsBlob = new Map();       // id → blob: URL del model
+
+  const nouId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const trobaObj = id => mon.objectes.find(o => o.id === id);
+  const diu = text => { estat.textContent = text; };
+
+  // ------------------------------------------------------------------ desament local
+  const BD = {
+    obre() {
+      return new Promise((res, rej) => {
+        const r = indexedDB.open("constructor-mons", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async get(k) {
+      const db = await this.obre();
+      return new Promise((res, rej) => {
+        const r = db.transaction("kv").objectStore("kv").get(k);
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async set(k, v) {
+      const db = await this.obre();
+      return new Promise((res, rej) => {
+        const tx = db.transaction("kv", "readwrite");
+        tx.objectStore("kv").put(v, k);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+    }
+  };
+
+  let temporitzador = null;
+  function desaEsborrany() {
+    if (MODE_VISOR) return;
+    clearTimeout(temporitzador);
+    temporitzador = setTimeout(async () => {
+      try { await BD.set(CLAU_ESBORRANY, JSON.stringify(mon)); }
+      catch (e) { diu("⚠️ No es pot desar l'esborrany al navegador: desa el .json sovint."); }
+    }, 600);
+  }
+
+  // ------------------------------------------------------------------ text en canvas (accents)
+  function canvasText(text, fons, id) {
+    const vell = document.getElementById(id);
+    if (vell) vell.remove();
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("2d");
+    const mida = 48;
+    ctx.font = `600 ${mida}px system-ui, sans-serif`;
+    const linies = (text || " ").split("\n");
+    c.width = Math.ceil(Math.max(...linies.map(l => ctx.measureText(l).width)) + 48);
+    c.height = Math.ceil(linies.length * mida * 1.3 + 32);
+    ctx.fillStyle = fons;
+    ctx.beginPath(); ctx.roundRect(0, 0, c.width, c.height, 24); ctx.fill();
+    ctx.font = `600 ${mida}px system-ui, sans-serif`;
+    ctx.fillStyle = "#fff"; ctx.textBaseline = "top";
+    linies.forEach((l, i) => ctx.fillText(l, 24, 16 + i * mida * 1.3));
+    c.id = id;
+    c.style.display = "none";
+    document.body.appendChild(c);
+    return c;
+  }
+
+  // ------------------------------------------------------------------ cel i terra
+  function aplicaCel() {
+    const vell = $("cel");
+    const cel = document.createElement("a-sky");
+    cel.id = "cel";
+    cel.setAttribute("radius", 100);
+    if (mon.cel.tipus === "imatge" && mon.cel.imatge) {
+      cel.setAttribute("src", mon.cel.imatge);
+      cel.setAttribute("rotation", { x: 0, y: -90 + (mon.cel.gir || 0), z: 0 });
+    } else {
+      cel.setAttribute("color", mon.cel.color);
+    }
+    vell.replaceWith(cel);
+  }
+
+  function aplicaTerra() {
+    const t = $("terra");
+    t.setAttribute("material", mon.terra.visible
+      ? { color: mon.terra.color, opacity: 1, transparent: false }
+      : { color: mon.terra.color, opacity: 0, transparent: true });
+  }
+
+  // ------------------------------------------------------------------ objectes
+  async function urlModel(o) {
+    if (!o.model.startsWith("data:")) return o.model;
+    if (!urlsBlob.has(o.id)) {
+      const blob = await (await fetch(o.model)).blob();
+      urlsBlob.set(o.id, URL.createObjectURL(blob));
+    }
+    return urlsBlob.get(o.id);
+  }
+
+  function escalaDe(o) {
+    if (o.tipus === "model") return o.mida / (midaBase.get(o.id) || 1);
+    return o.mida;
+  }
+
+  function actualitzaTransform(o) {
+    const el = $("o-" + o.id);
+    if (!el) return;
+    const s = escalaDe(o);
+    el.object3D.position.set(o.x, o.y, o.z);
+    el.object3D.rotation.set(0, THREE.MathUtils.degToRad(o.girY), 0);
+    el.object3D.scale.set(s, s, s);
+    if (o.id === selId) mouAnell(o);
+  }
+
+  function construeix(o) {
+    const vell = $("o-" + o.id);
+    if (vell) vell.remove();
+    const el = document.createElement("a-entity");
+    el.id = "o-" + o.id;
+    el.classList.add("clicable");
+    let fill;
+
+    if (o.tipus === "model") {
+      fill = document.createElement("a-entity");
+      el.object3D.visible = false;
+      fill.addEventListener("model-loaded", ev => {
+        // Centra el model i el posa damunt del terra; la mida es controla amb `o.mida` (m)
+        const malla = ev.detail.model;
+        const pare = malla.parent;
+        pare.remove(malla);
+        malla.position.set(0, 0, 0);
+        malla.updateMatrixWorld(true);
+        const caixa = new THREE.Box3().setFromObject(malla);
+        pare.add(malla);
+        const mida = caixa.getSize(new THREE.Vector3());
+        const centre = caixa.getCenter(new THREE.Vector3());
+        malla.position.set(-centre.x, -caixa.min.y, -centre.z);
+        midaBase.set(o.id, Math.max(mida.x, mida.y, mida.z) || 1);
+        el.object3D.visible = true;
+        actualitzaTransform(o);
+      });
+      fill.addEventListener("model-error", () => diu(`⚠️ No s'ha pogut carregar «${o.nom}».`));
+      urlModel(o).then(url => fill.setAttribute("gltf-model", url));
+    } else if (o.tipus === "text") {
+      const c = canvasText(o.text, "rgba(20,40,90,.92)", "txt-" + o.id);
+      const alt = c.height / c.width;
+      fill = document.createElement("a-plane");
+      fill.setAttribute("width", 1);
+      fill.setAttribute("height", alt);
+      fill.setAttribute("position", { x: 0, y: alt / 2, z: 0 });
+      fill.setAttribute("material", { src: "#" + c.id, transparent: true, shader: "flat", side: "double" });
+    } else {
+      const etiqueta = { cub: "a-box", esfera: "a-sphere", cilindre: "a-cylinder", con: "a-cone" }[o.tipus];
+      fill = document.createElement(etiqueta);
+      if (o.tipus === "cub") { fill.setAttribute("width", 1); fill.setAttribute("height", 1); fill.setAttribute("depth", 1); }
+      if (o.tipus === "esfera") fill.setAttribute("radius", 0.5);
+      if (o.tipus === "cilindre") { fill.setAttribute("radius", 0.5); fill.setAttribute("height", 1); }
+      if (o.tipus === "con") { fill.setAttribute("radius-bottom", 0.5); fill.setAttribute("radius-top", 0); fill.setAttribute("height", 1); }
+      fill.setAttribute("position", "0 0.5 0");
+      fill.setAttribute("color", o.color);
+    }
+
+    el.appendChild(fill);
+    el.addEventListener("click", () => {
+      if (MODE_VISOR) mostraMissatge(o);
+      else if (!arrossegant) selecciona(o.id);
+    });
+    contenidor.appendChild(el);
+    if (el.hasLoaded) actualitzaTransform(o);
+    else el.addEventListener("loaded", () => actualitzaTransform(o));
+  }
+
+  function construeixTot() {
+    contenidor.innerHTML = "";
+    $("missatges").innerHTML = "";
+    document.querySelectorAll("canvas[id^=txt-], canvas[id^=msg-]").forEach(c => c.remove());
+    mon.objectes.forEach(construeix);
+  }
+
+  function afegeix(tipus, extra) {
+    const n = mon.objectes.length;
+    const o = Object.assign({
+      id: nouId(), tipus, nom: NOMS[tipus] + " " + (n + 1),
+      color: "#e76f51", text: "Escriu aquí", missatge: "",
+      // Cada objecte nou surt en un lloc diferent davant del punt d'inici
+      x: ((n % 5) - 2) * 1.5, y: 0, z: -3 - Math.floor(n / 5) * 1.5,
+      girY: 0, mida: tipus === "text" ? 1.5 : 1
+    }, extra || {});
+    mon.objectes.push(o);
+    construeix(o);
+    selecciona(o.id);
+    canvi();
+  }
+
+  // ------------------------------------------------------------------ missatges (visor)
+  function mostraMissatge(o) {
+    if (!o.missatge) return;
+    const id = "m-" + o.id;
+    const obert = $(id);
+    if (obert) { obert.remove(); return; }
+    const c = canvasText(o.missatge, "rgba(0,0,0,.85)", "msg-" + o.id);
+    const amplada = Math.min(1.8, 0.3 * c.width / 80);
+    const alcada = amplada * c.height / c.width;
+    const pla = document.createElement("a-plane");
+    pla.id = id;
+    pla.setAttribute("width", amplada);
+    pla.setAttribute("height", alcada);
+    pla.setAttribute("material", { src: "#" + c.id, transparent: true, shader: "flat", side: "double" });
+    // El cartell surt davant de l'objecte, entre l'objecte i el visitant, sense tapar-lo
+    const caixa = new THREE.Box3().setFromObject($("o-" + o.id).object3D);
+    const mida = caixa.getSize(new THREE.Vector3());
+    const ulls = new THREE.Vector3();
+    $("camera").object3D.getWorldPosition(ulls);
+    const dir = new THREE.Vector3(ulls.x - o.x, 0, ulls.z - o.z);
+    if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1);
+    dir.normalize().multiplyScalar(Math.max(mida.x, mida.z) / 2 + 0.25);
+    const y = Math.min(caixa.max.y + alcada / 2 + 0.1, Math.max(ulls.y, caixa.min.y + alcada));
+    pla.setAttribute("position", { x: o.x + dir.x, y, z: o.z + dir.z });
+    pla.addEventListener("loaded", () => pla.object3D.lookAt(ulls.x, y, ulls.z));
+    $("missatges").appendChild(pla);
+  }
+
+  // ------------------------------------------------------------------ editor: selecció i propietats
+  const CONTROLS = [
+    { clau: "x", nom: "Esquerra/dreta", min: -20, max: 20, pas: 0.1 },
+    { clau: "z", nom: "Davant/darrere", min: -20, max: 20, pas: 0.1 },
+    { clau: "y", nom: "Alçada", min: 0, max: 10, pas: 0.1 },
+    { clau: "girY", nom: "Gir", min: -180, max: 180, pas: 5 },
+    { clau: "mida", nom: "Mida (m)", min: 0.1, max: 10, pas: 0.1 }
+  ];
+
+  function creaControls() {
+    const zona = $("controls-transform");
+    CONTROLS.forEach(c => {
+      const fila = document.createElement("div");
+      fila.className = "fila";
+      fila.innerHTML = `<span title="${c.nom}">${c.nom}</span>
+        <input type="range" min="${c.min}" max="${c.max}" step="${c.pas}" id="r-${c.clau}">
+        <input type="number" min="${c.min}" max="${c.max}" step="${c.pas}" id="n-${c.clau}">`;
+      zona.appendChild(fila);
+      const r = fila.querySelector("input[type=range]");
+      const n = fila.querySelector("input[type=number]");
+      const aplica = v => {
+        const o = trobaObj(selId);
+        if (!o || isNaN(v)) return;
+        o[c.clau] = Math.min(c.max, Math.max(c.min, v));
+        r.value = n.value = o[c.clau];
+        actualitzaTransform(o);
+        canvi();
+      };
+      r.addEventListener("input", () => aplica(parseFloat(r.value)));
+      n.addEventListener("change", () => aplica(parseFloat(n.value)));
+    });
+  }
+
+  function mouAnell(o) {
+    const anell = $("seleccio");
+    anell.object3D.position.set(o.x, 0.02, o.z);
+    const s = Math.max(0.3, o.mida);
+    anell.object3D.scale.set(s, s, s);
+    anell.object3D.visible = true;
+  }
+
+  function selecciona(id) {
+    selId = id;
+    const o = trobaObj(id);
+    $("props").hidden = !o;
+    if (!o) { $("seleccio").object3D.visible = false; pintaLlista(); return; }
+    $("p-nom").value = o.nom;
+    $("p-color").value = o.color;
+    $("p-text").value = o.text;
+    $("p-missatge").value = o.missatge;
+    $("fila-color").hidden = o.tipus === "model" || o.tipus === "text";
+    $("fila-text").hidden = o.tipus !== "text";
+    CONTROLS.forEach(c => { $("r-" + c.clau).value = $("n-" + c.clau).value = o[c.clau]; });
+    mouAnell(o);
+    pintaLlista();
+  }
+
+  function pintaLlista() {
+    const ul = $("llista");
+    ul.innerHTML = "";
+    if (!mon.objectes.length) {
+      ul.innerHTML = '<li class="pista">Encara no hi ha res. Afegeix-hi un objecte.</li>';
+      return;
+    }
+    mon.objectes.forEach(o => {
+      const li = document.createElement("li");
+      li.textContent = `${ICONES[o.tipus]} ${o.nom}`;
+      if (o.id === selId) li.className = "triat";
+      li.addEventListener("click", () => selecciona(o.id));
+      ul.appendChild(li);
+    });
+  }
+
+  function canvi() { desaEsborrany(); }
+
+  function omplePanell() {
+    $("titol").value = mon.titol;
+    document.querySelectorAll("input[name=cel-tipus]").forEach(r => { r.checked = r.value === mon.cel.tipus; });
+    $("cel-color").value = mon.cel.color;
+    $("cel-gir").value = mon.cel.gir;
+    $("cel-gir-val").textContent = mon.cel.gir + "°";
+    $("terra-visible").checked = mon.terra.visible;
+    $("terra-color").value = mon.terra.color;
+    selecciona(null);
+  }
+
+  function carregaMon(m) {
+    if (!m || m.format !== "mon-v1") throw new Error("Aquest fitxer no és un món del constructor.");
+    const base = monBuit();
+    mon = Object.assign(base, m, {
+      cel: Object.assign(base.cel, m.cel),
+      terra: Object.assign(base.terra, m.terra),
+      objectes: (m.objectes || []).map(o => Object.assign({ id: nouId() }, o))
+    });
+    urlsBlob.forEach(u => URL.revokeObjectURL(u));
+    urlsBlob.clear();
+    midaBase.clear();
+    aplicaCel();
+    aplicaTerra();
+    construeixTot();
+    $("titol-visor").textContent = mon.titol;
+    document.title = mon.titol + " · Constructor de mons";
+    if (!MODE_VISOR) omplePanell();
+  }
+
+  // ------------------------------------------------------------------ fitxers
+  const llegeixDataURL = f => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(f);
+  });
+
+  function redueixImatge(f) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        const r = Math.min(1, MAX_IMATGE / w);
+        const c = document.createElement("canvas");
+        c.width = Math.round(w * r);
+        c.height = Math.round(h * r);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        res({ dataURL: c.toDataURL("image/jpeg", 0.85), proporcio: w / h });
+      };
+      img.onerror = () => rej(new Error("No és una imatge vàlida."));
+      img.src = URL.createObjectURL(f);
+    });
+  }
+
+  function descarrega(nom, text) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    a.download = nom;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  const slug = t => (t || "mon").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "mon";
+
+  // ------------------------------------------------------------------ editor: esdeveniments
+  let arrossegant = false;
+  function connectaEditor() {
+    // Distingeix un clic d'un arrossegament per girar la vista
+    let premut = false, dist = 0, x0 = 0, y0 = 0;
+    escena.addEventListener("pointerdown", e => { premut = true; dist = 0; x0 = e.clientX; y0 = e.clientY; arrossegant = false; });
+    escena.addEventListener("pointermove", e => {
+      if (!premut) return;
+      dist = Math.hypot(e.clientX - x0, e.clientY - y0);
+      if (dist > 6) arrossegant = true;
+    });
+    window.addEventListener("pointerup", () => { premut = false; });
+
+    $("terra").addEventListener("click", ev => {
+      if (arrossegant) return;
+      const o = trobaObj(selId);
+      const pt = ev.detail.intersection && ev.detail.intersection.point;
+      if (!o || !pt) return;
+      o.x = Math.round(pt.x * 10) / 10;
+      o.z = Math.round(pt.z * 10) / 10;
+      actualitzaTransform(o);
+      selecciona(o.id);
+      canvi();
+    });
+
+    $("titol").addEventListener("input", e => { mon.titol = e.target.value; canvi(); });
+
+    document.querySelectorAll("input[name=cel-tipus]").forEach(r => r.addEventListener("change", () => {
+      mon.cel.tipus = r.value;
+      if (r.value === "imatge" && !mon.cel.imatge) diu("Tria una imatge 360 amb el botó.");
+      aplicaCel(); canvi();
+    }));
+    $("cel-color").addEventListener("input", e => {
+      mon.cel.color = e.target.value; mon.cel.tipus = "color";
+      document.querySelector("input[name=cel-tipus][value=color]").checked = true;
+      aplicaCel(); canvi();
+    });
+    $("cel-gir").addEventListener("input", e => {
+      mon.cel.gir = parseInt(e.target.value, 10);
+      $("cel-gir-val").textContent = mon.cel.gir + "°";
+      aplicaCel(); canvi();
+    });
+    $("cel-fitxer").addEventListener("change", async e => {
+      const f = e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      try {
+        diu("Preparant la imatge…");
+        const { dataURL, proporcio } = await redueixImatge(f);
+        mon.cel.imatge = dataURL;
+        mon.cel.tipus = "imatge";
+        document.querySelector("input[name=cel-tipus][value=imatge]").checked = true;
+        if (mon.terra.visible) { mon.terra.visible = false; $("terra-visible").checked = false; aplicaTerra(); }
+        aplicaCel(); canvi();
+        diu(Math.abs(proporcio - 2) > 0.05
+          ? `⚠️ La imatge fa ${proporcio.toFixed(2)}:1. Una imatge 360 ha de fer 2:1; es veurà deformada.`
+          : "Cel 360 posat. He amagat el terra perquè no tapi la foto.");
+      } catch (err) { diu("⚠️ " + err.message); }
+    });
+
+    $("terra-visible").addEventListener("change", e => { mon.terra.visible = e.target.checked; aplicaTerra(); canvi(); });
+    $("terra-color").addEventListener("input", e => { mon.terra.color = e.target.value; aplicaTerra(); canvi(); });
+
+    document.querySelectorAll("[data-afegeix]").forEach(b =>
+      b.addEventListener("click", () => afegeix(b.dataset.afegeix)));
+
+    $("model-fitxer").addEventListener("change", async e => {
+      const f = e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      if (!/\.glb$/i.test(f.name)) { diu("⚠️ Ha de ser un fitxer .glb (Tinkercad: Exporta → .GLB)."); return; }
+      if (f.size > MAX_MODEL_MB * 1024 * 1024) { diu(`⚠️ El model passa de ${MAX_MODEL_MB} MB: simplifica'l.`); return; }
+      diu("Carregant el model…");
+      afegeix("model", { model: await llegeixDataURL(f), nom: f.name.replace(/\.glb$/i, "").slice(0, 40) });
+      diu("Model afegit. Ajusta'n la mida i la posició.");
+    });
+
+    $("p-nom").addEventListener("input", e => { const o = trobaObj(selId); if (o) { o.nom = e.target.value; pintaLlista(); canvi(); } });
+    $("p-color").addEventListener("input", e => { const o = trobaObj(selId); if (o) { o.color = e.target.value; construeix(o); canvi(); } });
+    $("p-text").addEventListener("input", e => { const o = trobaObj(selId); if (o) { o.text = e.target.value; construeix(o); canvi(); } });
+    $("p-missatge").addEventListener("input", e => { const o = trobaObj(selId); if (o) { o.missatge = e.target.value; canvi(); } });
+
+    $("duplica").addEventListener("click", () => {
+      const o = trobaObj(selId);
+      if (!o) return;
+      const c = Object.assign({}, o, { id: nouId(), nom: o.nom + " (còpia)", x: Math.round((o.x + 1) * 10) / 10 });
+      mon.objectes.push(c);
+      construeix(c);
+      selecciona(c.id);
+      canvi();
+    });
+    $("esborra").addEventListener("click", () => {
+      const o = trobaObj(selId);
+      if (!o || !confirm(`Vols esborrar «${o.nom}»?`)) return;
+      mon.objectes = mon.objectes.filter(x => x.id !== o.id);
+      const el = $("o-" + o.id); if (el) el.remove();
+      selecciona(null);
+      canvi();
+    });
+
+    $("desa").addEventListener("click", () => {
+      descarrega(slug(mon.titol) + ".json", JSON.stringify(mon));
+      diu("Món desat a Baixades. Lliura'l a la tasca del Classroom.");
+    });
+    $("obre").addEventListener("change", async e => {
+      const f = e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      try { carregaMon(JSON.parse(await f.text())); canvi(); diu(`Obert: ${f.name}`); }
+      catch (err) { diu("⚠️ " + err.message); }
+    });
+    $("nou").addEventListener("click", () => {
+      if (!confirm("Començar un món nou? Si no l'has desat, es perdrà el que hi ha ara.")) return;
+      carregaMon(monBuit());
+      canvi();
+    });
+  }
+
+  // ------------------------------------------------------------------ visor
+  function connectaVisor() {
+    $("rig").object3D.position.set(0, 0, 0);
+    $("barra-visor").hidden = false;
+    // Gallet o clic al terra: el visitant es mou fins allà
+    $("terra").addEventListener("click", ev => {
+      const pt = ev.detail.intersection && ev.detail.intersection.point;
+      if (!pt) return;
+      const cap = $("camera").object3D.position;
+      $("rig").object3D.position.set(pt.x - cap.x, 0, pt.z - cap.z);
+    });
+    if (params.has("mon")) {
+      $("boto-qr").hidden = false;
+      $("boto-qr").addEventListener("click", mostraQR);
+      $("tanca-qr").addEventListener("click", () => { $("qr-capa").hidden = true; });
+    }
+  }
+
+  function mostraQR() {
+    const pinta = () => {
+      $("qr").innerHTML = "";
+      new QRCode($("qr"), { text: location.href, width: 256, height: 256 });
+      $("qr-capa").hidden = false;
+    };
+    if (window.QRCode) { pinta(); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+    s.onload = pinta;
+    s.onerror = () => alert("No s'ha pogut carregar el generador de QR.");
+    document.head.appendChild(s);
+  }
+
+  // ------------------------------------------------------------------ arrencada
+  async function arrenca() {
+    if (MODE_VISOR) {
+      connectaVisor();
+      try {
+        if (params.has("mon")) {
+          const r = await fetch(params.get("mon"));
+          if (!r.ok) throw new Error(`No trobo el món (${r.status}).`);
+          carregaMon(await r.json());
+        } else {
+          const esborrany = await BD.get(CLAU_ESBORRANY);
+          carregaMon(esborrany ? JSON.parse(esborrany) : monBuit());
+        }
+      } catch (err) {
+        $("titol-visor").textContent = "⚠️ " + err.message;
+      }
+      return;
+    }
+
+    $("panell").hidden = false;
+    $("inici").setAttribute("visible", true);
+    creaControls();
+    connectaEditor();
+    let carregat = false;
+    try {
+      const esborrany = await BD.get(CLAU_ESBORRANY);
+      if (esborrany) { carregaMon(JSON.parse(esborrany)); carregat = true; diu("He recuperat l'últim esborrany."); }
+    } catch (e) { /* sense IndexedDB: es comença de zero */ }
+    if (!carregat) carregaMon(monBuit());
+  }
+
+  escena.hasLoaded ? arrenca() : escena.addEventListener("loaded", arrenca);
+})();
+</script>
+</body>
+</html>

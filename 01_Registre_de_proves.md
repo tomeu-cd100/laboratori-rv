@@ -17,3 +17,7 @@
 | P9 | Quines experiències de `Simulacions/Experiencies_VR_360.md` van a les 3S i són gratuïtes? | Instal·lar i provar 10' cadascuna | ⏳ | | SA8 S1 (estacions) |
 | P10 | Quanta bateria gasten 2 h de classe amb 5 rondes? | Sessió simulada | ⏳ | | Logística |
 | P11 | Política d'edat de Meta per a 12 anys | Termes vigents | ⏳ | Font i data: ______ | Protocol §8 (ulleres per a tothom o pantalla) |
+| P12 | El constructor de mons va al Chromebook (editar, tancar, reobrir l'endemà) i el món es veu a les Quest? | `proves/constructor-mons/` publicat: món amb cel 360 + 2 models + rètol; mode VR, clic als objectes i al terra | ⚠️ | Validat en Chrome d'escriptori (2026-11-20): models normalitzats a 1 m sobre el terra, cel 360, missatges, desar/obrir .json, `?veure` i `?mon=`. Falta Chromebook i Quest. | SA8 opció B / SA9 (sense comptes) |
+| P13 | Un `.glb` exportat de Tinkercad es veu bé al constructor (colors, mida, orientació)? | Exportar un disseny real de SA4-SA6 → afegir-lo al constructor | ⏳ | Provat només amb un cub sintètic en mm desplaçat de l'origen | SA9 (objecte fabricat dins el món) |
+| P14 | Open Brush a les Quest 3S: es pot crear i exportar `.glb` sense compte, i treure el fitxer de les ulleres? | Instal·lar Open Brush, pintar, exportar, copiar per USB o Drive | ⏳ | | SA8 estació a les ulleres |
+| P15 | Delightex (ex-CoSpaces) Basic: l'app de les Quest 3S obre un projecte? Quants projectes per alumne? | Classe de prova amb 2 alumnes fictius | ⏳ | Basic: 1 classe, 29 alumnes, 1 tasca, 2 projectes. Prova Pro: 14 dies, 24 alumnes | SA8 opció A |
