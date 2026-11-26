@@ -8,7 +8,7 @@ d'aula és al curs Maker 1r ESO (SA7 tour 360 · SA8 escenes VR · SA9 fira).
 | Posar a punt les 5 ulleres | `00_Posada_en_marxa_Quest3S.md` |
 | Proves pendents i resultats | `01_Registre_de_proves.md` |
 | Visor de tour 360 (A-Frame, sense comptes) | `proves/visor-tour/` — s'edita només `tour.js`; amb `?editor` dona yaw/pitch en clicar |
-| Constructor de mons (fons 360 + models .glb + rètols, sense comptes) | `proves/constructor-mons/` — editor al Chromebook; a les Quest `?mon=mons/fitxer.json` (exemple: `?mon=mons/exemple.json`) |
+| Constructor de mons (fons 360 + models .glb + rètols, sense comptes) | `proves/constructor-mons/` — editor al Chromebook; a les Quest `?mon=mons/fitxer.json` (exemples: `?mon=mons/exemple.json`, `mons/rusc.json`, `mons/seu.json`; es generen amb `eines/genera_mon_*.py`) |
 | Plantilla per dibuixar un fons 360 (graella 2:1 + guia d'habitació) | `plantilles/graella_equirect_A4.pdf` i `_A3.pdf` — es regenera amb `py -3.11 eines/genera_graella_equirect.py` |
 | Estudi: mons virtuals gratuïts amb 1r ESO | `Estudi_mons_virtuals_1ESO_gratuit.md` |
 | Model 3D damunt la taula (realitat mixta) | `proves/ra-taula/` — `?model=fitxer.glb` o botó «Obre un model» |
